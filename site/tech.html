@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tech — abstract by Halden Voss</title>
+<meta name="description" content="The system behind abstract: image generation, on chain mechanic, idempotent airdrop, holder revenue distribution.">
+<link rel="stylesheet" href="style.css">
+<style>
+  .about code{font-family:ui-monospace,Consolas,monospace;background:#f4f4f4;
+    padding:1px 6px;border-radius:3px;font-size:90%}
+  .about ul{padding-left:22px;margin:0 0 18px;color:#1a1a1a;font-size:17px;line-height:1.72}
+  .about ul li{margin:0 0 6px}
+  .about .meta{font-family:ui-monospace,Consolas,monospace;font-size:13px;
+    color:var(--dim);text-align:center;margin-top:32px}
+  .about .meta a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--dim)}
+  .about .meta a:hover{border-color:var(--ink)}
+</style>
+</head>
+<body class="fade">
+
+<div class="cabar">
+  <span class="ca-k">contract</span>
+  <code id="ca" class="ca-v">revealed at launch</code>
+  <button id="cacopy" class="ca-c" type="button" aria-label="Copy contract">copy</button>
+</div>
+
+<header class="top">
+  <a class="mark" href="index.html">abstract</a>
+  <nav>
+    <a href="index.html#work">the work</a>
+    <a href="about.html">about</a>
+    <a href="tech.html" class="here">tech</a>
+    <a href="index.html#acquire">acquire</a>
+    <a class="x" id="xlink" href="https://x.com/abstractartguru" target="_blank" rel="noopener" aria-label="X">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18.244 2H21.5l-7.5 8.57L23 22h-6.86l-5.37-7.02L4.6 22H1.34l8.02-9.17L1 2h7.03l4.86 6.43L18.244 2Zm-1.203 18h1.9L7.05 4H5.02l12.02 16Z"/></svg>
+    </a>
+  </nav>
+</header>
+
+<main class="about">
+  <p class="kicker">how it works</p>
+  <h1>Verifiable from first stroke to final distribution.</h1>
+  <p class="dek">The entire system is one git repository. Every claim on this site can be reproduced from source.</p>
+  <div class="rule"></div>
+
+  <h2>The art</h2>
+  <p>Each piece is composed deterministically from a single structured definition in <code>src/prompts.js</code>: title, form family, palette, composition, tempo, mood, and a fixed seed. The image prompt is a pure function of those fields, so the metadata, the image, and the on chain name all share one source of truth.</p>
+  <ul>
+    <li>One hundred entries, ten of ten form families, interleaved so adjacent ids look visually different.</li>
+    <li>Each entry's seed is <code>200003 + id * 7919</code>. Reproducible.</li>
+    <li>The visual signature fuses rigorous geometric structure, lyrical painterly energy, and controlled drip skeins into one language.</li>
+    <li>Images pinned to IPFS via Pinata. Metadata pinned alongside.</li>
+  </ul>
+
+  <h2>The collection</h2>
+  <p>One Metaplex Core collection plus one hundred Core assets on Solana mainnet. Created with the <code>mpl-core</code> SDK, with the on chain Royalties plugin set to <strong>500 basis points</strong>. The collection plugin is the authoritative royalty source; Core marketplaces read it.</p>
+  <ul>
+    <li>All one hundred assets initially owned by the artist wallet.</li>
+    <li>On chain URIs point to the canonical https host so every wallet and explorer renders the painting, not only IPFS aware marketplaces.</li>
+    <li>Provenance object inside each metadata file records the exact model, seed and prompt that produced the image. Anyone can audit the correlation.</li>
+  </ul>
+
+  <h2>The mechanic</h2>
+  <p>To receive a painting, a wallet must hold <strong>5,000,000 $ART</strong> continuously for <strong>15 minutes</strong> after the coin migrates. The first one hundred wallets to hold the line each receive exactly one piece, in qualification order. Painting <code>N</code> goes to the <code>N</code>th wallet to qualify. One per holder.</p>
+  <p>Two independent ways to compute eligibility, both shipped:</p>
+  <ul>
+    <li><strong>Forward monitor</strong> (<code>scripts/snapshot-monitor.js</code>): polls every 20 seconds, tracks continuous time at or above threshold per wallet, locks winners as they cross 15 minutes. Persistent state, safe to restart.</li>
+    <li><strong>History aware re qualifier</strong> (<code>scripts/history-qualify.js</code>): reads every balance changing transaction for every current holder from Helius and reconstructs the actual continuous hold from chain. Independent of monitor uptime. Strict semantic: a wallet must still be holding now. This is the authoritative source for any airdrop run.</li>
+  </ul>
+
+  <blockquote>The rule is a statement about on chain reality, not about whether anyone was watching.</blockquote>
+
+  <h2>The airdrop</h2>
+  <p><code>scripts/airdrop.js</code> reads the winner list, maps rank <code>N</code> to NFT <code>N</code>, and transfers from the artist wallet to the qualifying wallet using <code>mpl-core</code>'s <code>transfer</code>. Idempotent and retry safe:</p>
+  <ul>
+    <li>Per rank transaction signatures saved to <code>output/winners/airdrop-state.json</code>. A re run only sends what is missing.</li>
+    <li>Per transfer receipt with signature, recipient and timestamp written to <code>output/winners/airdrop-receipts.json</code>. A frozen audit trail.</li>
+    <li>Five retries per asset with exponential backoff.</li>
+    <li>Optional typed confirmation gate: set <code>AIRDROP_REQUIRE_CONFIRM=1</code> and the script will refuse to send unless the operator types <code>SEND N</code>.</li>
+  </ul>
+
+  <h2>On chain truth</h2>
+  <p>The gallery does not trust the airdrop log to display holders. It reads ownership directly from the mpl-core asset accounts on chain (<code>scripts/onchain-owners.js</code>, one <code>getMultipleAccounts</code> call, decoded straight from account state), so the site always shows who actually possesses each piece, including any secondary transfers after the airdrop. The "view the transfer" link in the gallery modal is only attached when the current holder is still the original recipient, so every link is truthful.</p>
+
+  <h2>Holder revenue</h2>
+  <p>After all one hundred are minted out, the artist wallet becomes the collector for two streams: <strong>$ART creator fees</strong> from the coin and the <strong>5% NFT royalty</strong> from secondary sales on Magic Eden and Tensor. <code>scripts/distribute-fees.js</code> pays them out:</p>
+  <ul>
+    <li>Refuses to run unless all one hundred assets are off the artist wallet. Mintout is the precondition the holders were promised.</li>
+    <li>Reads live on chain holders, divides the distributable balance (deployer SOL minus a 0.5 SOL operating reserve) by one hundred, sends each rank an equal share.</li>
+    <li>If one wallet holds several pieces, it receives several shares. Strict pro rata across the collection.</li>
+    <li>Idempotent per epoch. A stuck run resumes with the same <code>--epoch</code> identifier and never double pays.</li>
+    <li>Default mode is dry. Pass <code>--execute</code> to actually send.</li>
+  </ul>
+
+  <h2>House style</h2>
+  <p>The gallery's <code>data.json</code> is checked at build time and refuses to ship if any dash character is present, anywhere. Dashless prose, base58 transaction signatures, plain text everywhere. The check fails the build, not the visitor.</p>
+
+  <h2>Open source platform</h2>
+  <p>The entire stack lives on GitHub. Image prompts, mint scripts, monitor, qualifier, airdrop, ownership tracker, fee distributor, the site you are reading right now. Any art collection can fork this and use the same mechanic to reward its holders directly from coin fees and royalties, without an intermediary. abstract is the first collection on the platform; it does not need to be the only one.</p>
+  <p class="meta"><a href="https://github.com/acceptcube/abstract" target="_blank" rel="noopener">github.com/acceptcube/abstract</a></p>
+
+  <div class="sig">Halden Voss</div>
+</main>
+
+<footer><p id="foot"></p></footer>
+
+<script src="site.js"></script>
+</body>
+</html>

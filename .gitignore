@@ -1,0 +1,10 @@
+node_modules
+.env
+output/images/*.png
+output/metadata/*.json
+output/winners/*.json
+output/logs/*
+output/proofs/*
+site/data.json
+site/images/*.png
+.DS_Store

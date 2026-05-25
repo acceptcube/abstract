@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>abstract art on chain</title>
+<meta name="description" content="100 abstract paintings built on solana. hold and be rewarded. a measurement of intrinsic value and perceived notions.">
+<meta property="og:title" content="abstract art on chain">
+<meta property="og:description" content="100 abstract paintings built on solana. hold and be rewarded. a measurement of intrinsic value and perceived notions.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://gateway.pinata.cloud">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="fade">
+
+<div class="cabar">
+  <span class="ca-k">contract</span>
+  <code id="ca" class="ca-v">revealed at launch</code>
+  <button id="cacopy" class="ca-c" type="button" aria-label="Copy contract">copy</button>
+</div>
+
+<header class="top">
+  <a class="mark" href="index.html">abstract</a>
+  <nav>
+    <a href="#work" class="here">the work</a>
+    <a href="about.html">about</a>
+    <a href="tech.html">tech</a>
+    <a href="#acquire">acquire</a>
+    <a class="x" id="xlink" href="https://x.com/abstractartguru" target="_blank" rel="noopener" aria-label="X">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18.244 2H21.5l-7.5 8.57L23 22h-6.86l-5.37-7.02L4.6 22H1.34l8.02-9.17L1 2h7.03l4.86 6.43L18.244 2Zm-1.203 18h1.9L7.05 4H5.02l12.02 16Z"/></svg>
+    </a>
+  </nav>
+</header>
+
+<section id="work" class="art">
+  <div class="art-head">
+    <h1>abstract art on chain</h1>
+    <p class="lede">100 abstract paintings built on solana. hold and be rewarded. a measurement of intrinsic value and perceived notions.</p>
+    <p id="art-status" class="status"></p>
+  </div>
+  <main id="grid" class="grid"></main>
+</section>
+
+<section id="acquire" class="acquire">
+  <h2>Acquire a work</h2>
+  <ol class="steps">
+    <li><span>01</span>Hold <b>5,000,000 $ART</b> in one wallet.</li>
+    <li><span>02</span>Keep it there <b>15 minutes, unbroken</b>, after the coin migrates. Selling below the line resets the clock.</li>
+    <li><span>03</span>The <b>first 100 wallets</b> to hold the line each receive <b>one painting</b>.</li>
+    <li><span>04</span>Painting <b>N</b> goes to the <b>Nth</b> wallet to qualify. One per holder.</li>
+    <li><span>05</span>After all 100 are minted out, holders <b>share the fees</b>: $ART creator fees and the 5% NFT royalty, paid pro rata across the 100 holders.</li>
+  </ol>
+  <p id="mechanic" class="fine"></p>
+  <p id="progress" class="fine"></p>
+</section>
+
+<footer><p id="foot"></p></footer>
+
+<div id="modal" class="modal hidden" onclick="closeModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div id="m-imgwrap"><img id="m-img" alt=""></div>
+    <div class="modal-body">
+      <h3 id="m-name"></h3>
+      <p id="m-story" class="story-line"></p>
+      <table id="m-attrs"></table>
+      <div id="m-owner" class="owner"></div>
+      <button onclick="closeModal()">close</button>
+    </div>
+  </div>
+</div>
+
+<script src="site.js"></script>
+<script>
+var pad = function (n) { return String(n).padStart(3, "0"); };
+var short = function (a) { return a ? a.slice(0, 4) + ".." + a.slice(-4) : ""; };
+var hue = function (a) {
+  var h = 5381;
+  for (var i = 0; i < a.length; i++) h = ((h * 33) ^ a.charCodeAt(i)) >>> 0;
+  return h % 360;
+};
+var esc = function (s) {
+  return String(s == null ? "" : s).replace(/[&<>]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c];
+  });
+};
+
+function render(d) {
+  var painted = d.painted || 0;
+  document.getElementById("art-status").textContent =
+    painted >= d.count
+      ? "All one hundred are painted."
+      : painted > 0
+      ? painted + " of " + d.count + " are painted. The rest are arriving."
+      : "The painting has begun.";
+
+  document.getElementById("mechanic").textContent = d.mechanic || "";
+  document.getElementById("progress").textContent = d.airdropped
+    ? d.airdropped + " of " + d.count + " distributed."
+    : "";
+
+  var grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  d.items.forEach(function (it) {
+    var fig = document.createElement("figure");
+    fig.className =
+      "card" + (it.image ? "" : " empty") + (it.owner ? " claimed" : "");
+    if (it.owner)
+      fig.style.setProperty("--w", "hsl(" + hue(it.owner) + " 60% 42%)");
+    var cap = it.owner
+      ? '<span class="tag">collected</span><span class="who">' + short(it.owner) + "</span>"
+      : it.image
+      ? '<span class="avail">available</span>'
+      : '<span class="avail">in the studio</span>';
+    fig.innerHTML =
+      (it.image
+        ? '<img loading="lazy" src="' + it.image + '" alt="' + esc(it.title) + '">'
+        : '<div class="frame"><span>' + pad(it.id) + "</span></div>") +
+      (it.owner ? '<span class="seal">collected</span>' : "") +
+      "<figcaption><b>" + pad(it.id) + "</b> " + esc(it.title) +
+      '<span class="cap">' + cap + "</span></figcaption>";
+    fig.onclick = function () { openModal(it); };
+    grid.appendChild(fig);
+  });
+}
+
+if (window.SITE) render(window.SITE);
+document.addEventListener("sitedata", function (e) { render(e.detail); });
+
+function openModal(it) {
+  document.getElementById("m-imgwrap").innerHTML = it.image
+    ? '<img src="' + it.image + '" alt="' + esc(it.title) + '">'
+    : '<div class="frame big"><span>' + pad(it.id) + "</span><em>in the studio</em></div>";
+  document.getElementById("m-name").textContent = "#" + pad(it.id) + "  " + it.title;
+  document.getElementById("m-story").textContent = it.story || "";
+  document.getElementById("m-attrs").innerHTML = [
+    ["Artist", "Halden Voss"],
+    ["Title", it.title],
+    ["Form", it.form],
+    ["Composition", it.composition],
+    ["Tempo", it.tempo],
+    ["Mood", it.mood],
+    ["Palette", it.palette],
+    ["Edition", it.id + " / 100"],
+  ].map(function (kv) {
+    return "<tr><th>" + kv[0] + "</th><td>" + esc(kv[1]) + "</td></tr>";
+  }).join("");
+  document.getElementById("m-owner").innerHTML = it.owner
+    ? '<div class="prov" style="--w:hsl(' + hue(it.owner) + ' 60% 42%)">' +
+        '<span class="provk">Collected</span>' +
+        '<a class="addr" href="https://solscan.io/account/' + esc(it.owner) +
+        '" target="_blank" rel="noopener"><code>' + esc(it.owner) + "</code></a>" +
+        (it.tx
+          ? ' <a class="txl" href="https://solscan.io/tx/' + esc(it.tx) +
+            '" target="_blank" rel="noopener">view the transfer</a>'
+          : "") +
+      "</div>"
+    : '<div class="prov avail2"><span class="provk">Available</span>' +
+      "<span>This work has not been collected. Hold the line to receive it.</span></div>";
+  document.getElementById("modal").classList.remove("hidden");
+}
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+}
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") closeModal();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "abstract",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "abstract — one hundred non-representational paintings by Halden Voss. Held by holders of $ART.",
+  "scripts": {
+    "generate:test": "node scripts/generate-art.js --test",
+    "generate:all": "node scripts/generate-art.js",
+    "metadata": "node scripts/build-metadata.js",
+    "ipfs": "node scripts/upload-ipfs.js",
+    "mint": "node scripts/mint-collection.js",
+    "update:uris": "node scripts/update-uris.js",
+    "monitor": "node scripts/snapshot-monitor.js",
+    "qualify:history": "node scripts/history-qualify.js",
+    "airdrop:dry": "node scripts/airdrop.js --dry",
+    "airdrop": "node scripts/airdrop.js",
+    "owners": "node scripts/onchain-owners.js",
+    "site": "node scripts/build-site.js",
+    "distribute": "node scripts/distribute-fees.js",
+    "verify:diversity": "node scripts/verify-diversity.js",
+    "verify:metadata": "node scripts/verify-metadata.js"
+  },
+  "dependencies": {
+    "@metaplex-foundation/mpl-core": "^1.1.1",
+    "@metaplex-foundation/umi": "^0.9.2",
+    "@metaplex-foundation/umi-bundle-defaults": "^0.9.2",
+    "@solana/web3.js": "^1.95.3",
+    "bs58": "^6.0.0",
+    "dotenv": "^16.4.5",
+    "sharp": "^0.33.5"
+  }
+}

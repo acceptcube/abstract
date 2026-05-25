@@ -41,6 +41,23 @@
   <main id="grid" class="grid"></main>
 </section>
 
+<section id="live" class="live">
+  <div class="live-head">
+    <h2>Live</h2>
+    <p id="live-status" class="live-status"></p>
+  </div>
+  <div class="live-grid">
+    <div class="lp">
+      <div class="lk">Holding the line right now</div>
+      <div id="qualifiers" class="ll"></div>
+    </div>
+    <div class="lp">
+      <div class="lk">Recent collections</div>
+      <div id="recent" class="ll"></div>
+    </div>
+  </div>
+</section>
+
 <section id="acquire" class="acquire">
   <h2>Acquire a work</h2>
   <ol class="steps">
@@ -97,6 +114,49 @@ function render(d) {
   document.getElementById("progress").textContent = d.airdropped
     ? d.airdropped + " of " + d.count + " distributed."
     : "";
+
+  // Live status header
+  var ls = document.getElementById("live-status");
+  if (ls) {
+    ls.textContent = d.liveMode
+      ? "Live tracking. Updates every redeploy. Source: on chain holder map + airdrop receipts."
+      : "Tracking activates the moment the contract is live. The slots open then.";
+  }
+
+  // Live qualifiers
+  var qDiv = document.getElementById("qualifiers");
+  if (qDiv) {
+    if (d.qualifiers && d.qualifiers.length) {
+      qDiv.innerHTML = d.qualifiers.map(function (q) {
+        var sec = Math.floor((q.msHeld || 0) / 1000);
+        var mm = Math.floor(sec / 60), ss = sec % 60;
+        var pct = Math.min(100, Math.round(((q.msHeld || 0) / (15 * 60 * 1000)) * 100));
+        return '<div class="qrow">' +
+          '<span class="qw">' + short(q.wallet) + '</span>' +
+          '<span class="qbar"><span style="width:' + pct + '%"></span></span>' +
+          '<span class="qt">' + mm + 'm ' + (ss < 10 ? "0" + ss : ss) + 's</span>' +
+          '</div>';
+      }).join("");
+    } else {
+      qDiv.innerHTML = '<div class="empty">No wallets above the line yet. The mechanic activates after the coin migrates.</div>';
+    }
+  }
+
+  // Recent airdrops
+  var rDiv = document.getElementById("recent");
+  if (rDiv) {
+    if (d.recentAirdrops && d.recentAirdrops.length) {
+      rDiv.innerHTML = d.recentAirdrops.map(function (a) {
+        return '<div class="rrow">' +
+          '<span class="rr">#' + pad(a.rank) + '</span>' +
+          '<a class="rw" href="https://solscan.io/account/' + esc(a.to) + '" target="_blank" rel="noopener">' + short(a.to) + '</a>' +
+          (a.tx ? ' <a class="rt" href="https://solscan.io/tx/' + esc(a.tx) + '" target="_blank" rel="noopener">tx</a>' : '') +
+          '</div>';
+      }).join("");
+    } else {
+      rDiv.innerHTML = '<div class="empty">No collections yet. The first qualifier receives painting #001.</div>';
+    }
+  }
 
   var grid = document.getElementById("grid");
   grid.innerHTML = "";

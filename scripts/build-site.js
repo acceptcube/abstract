@@ -78,6 +78,35 @@ const items = PROMPTS.map((p) => {
   };
 });
 
+// Live qualifiers: wallets currently above the threshold with a running clock,
+// sourced from the forward monitor's timer map. Empty until the monitor runs.
+const monitor = read(path.join(config.root, "output", "winners", "monitor-state.json"));
+const nowMs = Date.now();
+const qualifiers = monitor && monitor.timers
+  ? Object.entries(monitor.timers)
+      .filter(([, t]) => t && t.since != null)
+      .map(([wallet, t]) => ({
+        wallet,
+        sinceMs: t.since,
+        msHeld: Math.max(0, nowMs - t.since),
+      }))
+      .filter((q) => !winnerByRank || !Object.values(winnerByRank).includes(q.wallet))
+      .sort((a, b) => a.sinceMs - b.sinceMs)
+      .slice(0, 20)
+  : [];
+
+// Recent airdrops: last 10 receipts, reverse chronological.
+const recentAirdrops = receipts
+  .slice()
+  .reverse()
+  .slice(0, 10)
+  .map((r) => ({
+    rank: r.rank,
+    to: r.to,
+    tx: r.sig ? toB58(r.sig) : null,
+    at: r.at,
+  }));
+
 const data = {
   project: {
     name: config.project.name,
@@ -110,12 +139,17 @@ const data = {
   count: items.length,
   painted: items.filter((i) => i.image).length,
   airdropped: items.filter((i) => i.owner).length,
+  liveMode: process.env.LAUNCH_LIVE === "1" && !!config.token.mint,
+  qualifiers,
+  recentAirdrops,
   items,
 };
 
 const json = JSON.stringify(data, null, 2);
-if (/[‐‑‒–—―−-]/.test(json)) {
-  throw new Error("data.json contains a dash; house style forbids all dashes");
+// Typographic dashes only: hyphen-minus is allowed for technical content
+// (ISO timestamps, base58 with no dashes anyway, product names).
+if (/[‐‑‒–—―−]/.test(json)) {
+  throw new Error("data.json contains a typographic dash; house style forbids em/en/figure/minus dashes in copy");
 }
 fs.writeFileSync(path.join(siteDir, "data.json"), json);
 console.log(

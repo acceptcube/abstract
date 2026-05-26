@@ -3,7 +3,7 @@
 One hundred non representational paintings by **Halden Voss**, held by holders of **$ART**.
 
 **Site:** https://abstractart.guru
-**Contract ($ART):** `ec2f6zt91Zk9swmxTxjDaCzaiqZQyqR8mkFA3hRpump`
+**Contract ($ART):** `Rdx839kdWQgaX2yCF7ZFLeiwhKjiRtcJLfqGfMUpump`
 
 ## What this is
 
